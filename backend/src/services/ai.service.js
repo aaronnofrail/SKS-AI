@@ -51,9 +51,9 @@ const generateContent = async (text, options) => {
     // Best Practice: Use gemini-1.5-pro for complex reasoning tasks (educational content generation)
     // Best Practice: Use system instructions to set the persona
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-3-flash-preview",
       systemInstruction:
-        "You are an expert Educational AI Engineer and Instructional Designer. Your goal is to analyze provided documents and generate highly accurate, structured, and pedagogically effective study materials. You must ALWAYS return pure JSON matching the exact schema requested without any conversational filler.",
+        "You are an expert Educational AI Engineer and Instructional Designer. Your goal is to analyze provided documents and generate highly accurate, structured, and pedagogically effective study materials. You must ALWAYS return pure JSON matching the exact schema requested without any conversational filler. IMPORTANT: ALL generated content (summaries, flashcard questions/answers, quiz questions/options/explanations) MUST be in Indonesian (Bahasa Indonesia).",
     });
 
     let prompt = "";

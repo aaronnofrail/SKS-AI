@@ -3,49 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKS-AI - Smart Study Companion</title>
+    <title>SKS-AI - Teman Belajar Pintar</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="app-header">
         <div class="logo">SKS-AI</div>
-        <p class="subtitle">Sistem Kebut Semalam - Your AI Study Companion</p>
+        <p class="subtitle">Sistem Kebut Semalam - Teman Belajar AI Kamu</p>
     </header>
 
     <main class="container">
         <!-- Control Panel (Left) -->
         <section class="control-panel glass-panel">
-            <h2>Study Configuration</h2>
+            <h2>Konfigurasi Belajar</h2>
             
             <div class="upload-zone" id="uploadZone">
                 <div class="upload-icon">📄</div>
-                <p>Drag & drop your study material here</p>
-                <p class="small">or click to browse (PDF, DOCX, TXT)</p>
+                <p>Tarik & lepas materi belajar kamu di sini</p>
+                <p class="small">atau klik untuk menelusuri (PDF, DOCX, TXT)</p>
                 <input type="file" id="fileInput" accept=".pdf,.docx,.txt" hidden>
                 <div id="fileNameDisplay" class="file-name hidden"></div>
             </div>
 
             <div class="config-group">
-                <label>Output Format</label>
+                <label>Format Output</label>
                 <div class="mode-selector">
-                    <button class="mode-btn active" data-mode="summary">Summary</button>
-                    <button class="mode-btn" data-mode="flashcard">Flashcards</button>
-                    <button class="mode-btn" data-mode="quiz">Quiz</button>
+                    <button class="mode-btn active" data-mode="summary">Ringkasan</button>
+                    <button class="mode-btn" data-mode="flashcard">Flashcard</button>
+                    <button class="mode-btn" data-mode="quiz">Kuis</button>
                 </div>
             </div>
 
             <div id="quizSettings" class="quiz-settings hidden">
                 <div class="config-group">
-                    <label>Difficulty</label>
+                    <label>Tingkat Kesulitan</label>
                     <select id="difficultySelect" class="styled-select">
-                        <option value="easy">Easy</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="hard">Hard</option>
+                        <option value="easy">Mudah</option>
+                        <option value="medium" selected>Sedang</option>
+                        <option value="hard">Sulit</option>
                     </select>
                 </div>
                 <div class="config-group">
-                    <label>Number of Questions</label>
+                    <label>Jumlah Pertanyaan</label>
                     <div class="count-selector">
                         <button class="count-btn" data-count="5">5</button>
                         <button class="count-btn active" data-count="10">10</button>
@@ -55,7 +55,7 @@
             </div>
 
             <button id="generateBtn" class="generate-btn" disabled>
-                <span class="btn-text">Generate Study Material</span>
+                <span class="btn-text">Buat Materi Belajar</span>
                 <span class="loader hidden"></span>
             </button>
         </section>
@@ -64,19 +64,19 @@
         <section class="display-area glass-panel">
             <div id="emptyState" class="empty-state">
                 <div class="empty-icon">✨</div>
-                <h3>Ready to Learn?</h3>
-                <p>Upload a document and select your preferred output format to get started.</p>
+                <h3>Siap untuk Belajar?</h3>
+                <p>Unggah dokumen dan pilih format output yang diinginkan untuk memulai.</p>
             </div>
 
             <!-- Summary Container -->
             <div id="summaryContainer" class="output-container hidden">
-                <h2>Summary</h2>
+                <h2>Ringkasan</h2>
                 <div id="summaryContent" class="content-box"></div>
             </div>
 
             <!-- Flashcard Container -->
             <div id="flashcardContainer" class="output-container hidden">
-                <h2>Flashcards</h2>
+                <h2>Flashcard</h2>
                 <div class="flashcard-controls">
                     <button id="prevCard" class="icon-btn">◀</button>
                     <span id="cardCounter">1 / 1</span>
@@ -88,18 +88,18 @@
                             <div class="card-content">
                                 <h3 id="fcQuestion">Question goes here</h3>
                             </div>
-                            <div class="card-hint">Click to flip</div>
+                            <div class="card-hint">Klik untuk membalik</div>
                         </div>
                         <div class="card__face card__face--back">
                             <div class="card-content">
-                                <h3>Answer</h3>
+                                <h3>Jawaban</h3>
                                 <p id="fcAnswer">Answer goes here</p>
                                 <div class="explanation">
-                                    <h4>Explanation</h4>
+                                    <h4>Penjelasan</h4>
                                     <p id="fcExplanation">Explanation goes here</p>
                                 </div>
                             </div>
-                            <div class="card-hint">Click to flip back</div>
+                            <div class="card-hint">Klik untuk membalik kembali</div>
                         </div>
                     </div>
                 </div>
@@ -107,7 +107,7 @@
 
             <!-- Quiz Container -->
             <div id="quizContainer" class="output-container hidden">
-                <h2>Quiz Time</h2>
+                <h2>Waktunya Kuis</h2>
                 <div id="quizActiveView">
                     <div class="quiz-header">
                         <span id="quizProgress">Question 1 of 10</span>
@@ -118,18 +118,18 @@
                             <!-- Options rendered via JS -->
                         </div>
                     </div>
-                    <button id="submitQuizBtn" class="action-btn">Submit Answer</button>
+                    <button id="submitQuizBtn" class="action-btn">Kirim Jawaban</button>
                 </div>
                 
                 <div id="quizResultView" class="hidden">
                     <div class="score-card">
-                        <h3>Your Score</h3>
+                        <h3>Skor Anda</h3>
                         <div id="quizScore" class="score-value">0/0</div>
                     </div>
                     <div id="quizFeedback" class="feedback-list">
                         <!-- Feedback rendered via JS -->
                     </div>
-                    <button id="restartQuizBtn" class="action-btn">Try Another Quiz</button>
+                    <button id="restartQuizBtn" class="action-btn">Coba Kuis Lain</button>
                 </div>
             </div>
         </section>
