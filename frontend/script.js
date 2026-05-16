@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
         formData.append("count", quizCount);
       }
 
-      const response = await fetch("http://localhost:5000/api/generate", {
+      const response = await fetch("https://sks-ai.vercel.app/api/generate", {
         method: "POST",
         body: formData,
       });
