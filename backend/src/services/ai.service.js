@@ -1,5 +1,5 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const AppError = require('../utils/AppError');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const AppError = require("../utils/AppError");
 
 // Initialize Gemini SDK
 // IMPORTANT: The GEMINI_API_KEY must be in the .env file
@@ -11,19 +11,22 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const parseGeminiResponse = (text) => {
   try {
     let cleanedText = text.trim();
-    if (cleanedText.startsWith('```json')) {
-      cleanedText = cleanedText.replace(/^```json/, '');
-    } else if (cleanedText.startsWith('```')) {
-      cleanedText = cleanedText.replace(/^```/, '');
+    if (cleanedText.startsWith("```json")) {
+      cleanedText = cleanedText.replace(/^```json/, "");
+    } else if (cleanedText.startsWith("```")) {
+      cleanedText = cleanedText.replace(/^```/, "");
     }
-    
-    if (cleanedText.endsWith('```')) {
-      cleanedText = cleanedText.replace(/```$/, '');
+
+    if (cleanedText.endsWith("```")) {
+      cleanedText = cleanedText.replace(/```$/, "");
     }
 
     return JSON.parse(cleanedText.trim());
   } catch (error) {
-    throw new AppError('Failed to parse AI response as JSON. The model returned invalid format.', 500);
+    throw new AppError(
+      "Failed to parse AI response as JSON. The model returned invalid format.",
+      500,
+    );
   }
 };
 
@@ -34,29 +37,30 @@ const parseGeminiResponse = (text) => {
  * @returns {Promise<Object>} - Formatted JSON response
  */
 const generateContent = async (text, options) => {
-  const { mode, difficulty = 'medium', count = 5 } = options;
+  const { mode, difficulty = "medium", count = 5 } = options;
 
   if (!text) {
-    throw new AppError('No text provided for generation.', 400);
+    throw new AppError("No text provided for generation.", 400);
   }
 
   if (!process.env.GEMINI_API_KEY) {
-    throw new AppError('GEMINI_API_KEY is not configured in the server environment.', 500);
+    throw new AppError("GEMINI_API_KEY is not configured in the server environment.", 500);
   }
 
   try {
     // Best Practice: Use gemini-1.5-pro for complex reasoning tasks (educational content generation)
     // Best Practice: Use system instructions to set the persona
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-pro',
-      systemInstruction: "You are an expert Educational AI Engineer and Instructional Designer. Your goal is to analyze provided documents and generate highly accurate, structured, and pedagogically effective study materials. You must ALWAYS return pure JSON matching the exact schema requested without any conversational filler."
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      systemInstruction:
+        "You are an expert Educational AI Engineer and Instructional Designer. Your goal is to analyze provided documents and generate highly accurate, structured, and pedagogically effective study materials. You must ALWAYS return pure JSON matching the exact schema requested without any conversational filler.",
     });
 
-    let prompt = '';
+    let prompt = "";
 
     // Best Practice: Prompt Engineering with strict schema definitions
     switch (mode) {
-      case 'summary':
+      case "summary":
         prompt = `
           Task: Create a comprehensive, easy-to-read summary of the provided text.
           Requirements:
@@ -74,7 +78,7 @@ const generateContent = async (text, options) => {
           ---
         `;
         break;
-      case 'flashcard':
+      case "flashcard":
         prompt = `
           Task: Extract the most critical terms, concepts, and definitions from the provided text to create flashcards.
           Requirements:
@@ -97,7 +101,7 @@ const generateContent = async (text, options) => {
           ---
         `;
         break;
-      case 'quiz':
+      case "quiz":
         prompt = `
           Task: Create a multiple-choice quiz based on the provided text.
           Requirements:
@@ -135,10 +139,10 @@ const generateContent = async (text, options) => {
 
     // Call Gemini API
     const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig,
     });
-    
+
     const responseText = result.response.text();
 
     // Parse the response using our helper (though responseMimeType usually guarantees valid JSON without markdown)
@@ -150,8 +154,8 @@ const generateContent = async (text, options) => {
         mode,
         difficulty,
         count,
-        generatedResults: parsedData
-      }
+        generatedResults: parsedData,
+      },
     };
   } catch (error) {
     if (error instanceof AppError) {
@@ -162,5 +166,5 @@ const generateContent = async (text, options) => {
 };
 
 module.exports = {
-  generateContent
+  generateContent,
 };

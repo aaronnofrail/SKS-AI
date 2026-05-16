@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 4. Generate Button
+    // 4. Generate Button (API Integration)
     generateBtn.addEventListener('click', async () => {
         if (!currentFile) return;
 
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnText = generateBtn.querySelector('.btn-text');
         const loader = generateBtn.querySelector('.loader');
         
-        btnText.textContent = 'Processing...';
+        btnText.textContent = 'Processing with AI...';
         loader.classList.remove('hidden');
         generateBtn.disabled = true;
 
@@ -110,52 +110,75 @@ document.addEventListener('DOMContentLoaded', () => {
         flashcardContainer.classList.add('hidden');
         quizContainer.classList.add('hidden');
 
-        // Simulate network delay for mock functionality
-        setTimeout(() => {
+        try {
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            formData.append('mode', currentMode);
+            
+            if (currentMode === 'quiz') {
+                formData.append('difficulty', quizDifficulty);
+                formData.append('count', quizCount);
+            }
+
+            const response = await fetch('http://localhost:3000/api/generate', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || result.status === 'error' || result.status === 'fail') {
+                throw new Error(result.message || 'An error occurred during generation.');
+            }
+
+            // Render Output based on mode
+            renderRealOutput(currentMode, result.data.generatedResults);
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert(`Failed to generate study material: ${error.message}`);
+            emptyState.classList.remove('hidden');
+        } finally {
             btnText.textContent = 'Generate Study Material';
             loader.classList.add('hidden');
             generateBtn.disabled = false;
-
-            renderMockOutput(currentMode);
-        }, 1500);
+        }
     });
 
-    // --- Mock Data Rendering ---
+    // --- Dynamic Data Rendering ---
     
-    function renderMockOutput(mode) {
+    function renderRealOutput(mode, data) {
         if (mode === 'summary') {
             summaryContainer.classList.remove('hidden');
-            document.getElementById('summaryContent').innerHTML = `
-                <h3>Core Concepts</h3>
-                <p>This is a simulated summary of your document. In the final product, Gemini will generate this based on your PDF.</p>
-                <ul>
-                    <li><strong>Key Point 1:</strong> Important definition goes here.</li>
-                    <li><strong>Key Point 2:</strong> Another crucial concept extracted from the text.</li>
-                    <li><strong>Key Point 3:</strong> Summary of the overall conclusion.</li>
-                </ul>
-            `;
+            // Check if marked.js is available
+            if (typeof marked !== 'undefined' && data.summary) {
+                document.getElementById('summaryContent').innerHTML = marked.parse(data.summary);
+            } else {
+                // Fallback if marked is missing or data structure is different
+                document.getElementById('summaryContent').innerText = typeof data === 'string' ? data : data.summary;
+            }
         } 
         else if (mode === 'flashcard') {
             flashcardContainer.classList.remove('hidden');
-            setupMockFlashcards();
+            setupFlashcards(data);
         }
         else if (mode === 'quiz') {
             quizContainer.classList.remove('hidden');
-            setupMockQuiz();
+            setupQuiz(data);
         }
     }
 
     // Flashcard Logic
-    function setupMockFlashcards() {
+    function setupFlashcards(cardsArray) {
         const card = document.getElementById('flashcard');
         const nextBtn = document.getElementById('nextCard');
         const prevBtn = document.getElementById('prevCard');
         const counter = document.getElementById('cardCounter');
         
-        const mockCards = [
-            { q: "What does SKS stand for?", a: "Sistem Kebut Semalam", exp: "An Indonesian slang for cramming study materials a night before the exam." },
-            { q: "What AI powers this app?", a: "Google Gemini", exp: "Gemini is used to intelligently summarize and generate quizzes from raw text." }
-        ];
+        if (!Array.isArray(cardsArray) || cardsArray.length === 0) {
+            alert('No flashcards generated.');
+            return;
+        }
 
         let currentIndex = 0;
 
@@ -164,26 +187,29 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // wait for flip back animation before changing text
             setTimeout(() => {
-                document.getElementById('fcQuestion').textContent = mockCards[currentIndex].q;
-                document.getElementById('fcAnswer').textContent = mockCards[currentIndex].a;
-                document.getElementById('fcExplanation').textContent = mockCards[currentIndex].exp;
-                counter.textContent = `${currentIndex + 1} / ${mockCards.length}`;
+                const currentCard = cardsArray[currentIndex];
+                document.getElementById('fcQuestion').textContent = currentCard.question || 'N/A';
+                document.getElementById('fcAnswer').textContent = currentCard.answer || 'N/A';
+                document.getElementById('fcExplanation').textContent = currentCard.explanation || 'N/A';
+                counter.textContent = `${currentIndex + 1} / ${cardsArray.length}`;
             }, 300);
         }
 
-        // Flip interaction
-        card.addEventListener('click', () => {
-            card.classList.toggle('is-flipped');
+        // Flip interaction (remove previous listener to avoid duplicates if generated multiple times)
+        const newCard = card.cloneNode(true);
+        card.parentNode.replaceChild(newCard, card);
+        
+        newCard.addEventListener('click', () => {
+            newCard.classList.toggle('is-flipped');
         });
 
-        // Ensure listeners are only added once
         const newNextBtn = nextBtn.cloneNode(true);
         const newPrevBtn = prevBtn.cloneNode(true);
         nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
         prevBtn.parentNode.replaceChild(newPrevBtn, prevBtn);
 
         newNextBtn.addEventListener('click', () => {
-            if (currentIndex < mockCards.length - 1) {
+            if (currentIndex < cardsArray.length - 1) {
                 currentIndex++;
                 renderCard();
             }
@@ -200,7 +226,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Quiz Logic
-    function setupMockQuiz() {
+    function setupQuiz(questionsArray) {
+        if (!Array.isArray(questionsArray) || questionsArray.length === 0) {
+            alert('No quiz questions generated.');
+            return;
+        }
+
         const activeView = document.getElementById('quizActiveView');
         const resultView = document.getElementById('quizResultView');
         const optionsGroup = document.getElementById('quizOptions');
@@ -210,51 +241,94 @@ document.addEventListener('DOMContentLoaded', () => {
         activeView.classList.remove('hidden');
         resultView.classList.add('hidden');
 
-        // Mock a single question for demonstration
-        document.getElementById('quizProgress').textContent = `Question 1 of ${quizCount} (Mock)`;
-        document.getElementById('quizQuestion').textContent = "Which architecture pattern does SKS-AI use?";
-        
-        const options = ["Microservices", "Single Page Application (SPA)", "Server-side Rendering (SSR)", "Monolith"];
-        
-        optionsGroup.innerHTML = '';
-        options.forEach((opt, index) => {
-            optionsGroup.innerHTML += `
-                <label class="option-label">
-                    <input type="radio" name="q1" value="${opt}">
-                    ${opt}
-                </label>
-            `;
-        });
+        let currentQIndex = 0;
+        let userAnswers = [];
 
-        // Use event delegation or re-assign to avoid multiple bindings
-        submitBtn.onclick = () => {
-            const selected = document.querySelector('input[name="q1"]:checked');
+        function renderQuestion() {
+            const q = questionsArray[currentQIndex];
+            document.getElementById('quizProgress').textContent = `Question ${currentQIndex + 1} of ${questionsArray.length}`;
+            document.getElementById('quizQuestion').textContent = q.question;
+            
+            optionsGroup.innerHTML = '';
+            q.options.forEach((opt, index) => {
+                const optId = `opt_${index}`;
+                optionsGroup.innerHTML += `
+                    <label class="option-label" for="${optId}">
+                        <input type="radio" name="quiz_option" id="${optId}" value="${opt.replace(/"/g, '&quot;')}">
+                        ${opt}
+                    </label>
+                `;
+            });
+
+            if (currentQIndex === questionsArray.length - 1) {
+                submitBtn.textContent = 'Submit Quiz';
+            } else {
+                submitBtn.textContent = 'Next Question';
+            }
+        }
+
+        // Remove old listeners
+        const newSubmitBtn = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+
+        newSubmitBtn.addEventListener('click', () => {
+            const selected = document.querySelector('input[name="quiz_option"]:checked');
             if (!selected) {
                 alert("Please select an answer");
                 return;
             }
 
-            // Show results
+            // Save answer
+            userAnswers[currentQIndex] = selected.value;
+
+            if (currentQIndex < questionsArray.length - 1) {
+                // Next question
+                currentQIndex++;
+                renderQuestion();
+            } else {
+                // Finish quiz
+                showQuizResults();
+            }
+        });
+
+        function showQuizResults() {
             activeView.classList.add('hidden');
             resultView.classList.remove('hidden');
             
-            document.getElementById('quizScore').textContent = selected.value === "Single Page Application (SPA)" ? "1/1" : "0/1";
-            
-            document.getElementById('quizFeedback').innerHTML = `
-                <div class="feedback-item ${selected.value === "Single Page Application (SPA)" ? 'correct' : 'incorrect'}">
-                    <h4>Q: Which architecture pattern does SKS-AI use?</h4>
-                    <p>Your answer: ${selected.value}</p>
-                    <p class="correct-ans">Correct answer: Single Page Application (SPA)</p>
-                    <p class="exp">SKS-AI uses a Vanilla HTML/JS frontend that communicates with a Node.js backend without reloading the page.</p>
-                </div>
-            `;
-        };
+            let score = 0;
+            let feedbackHTML = '';
 
-        restartBtn.onclick = () => {
+            questionsArray.forEach((q, i) => {
+                const isCorrect = userAnswers[i] === q.correctAnswer;
+                if (isCorrect) score++;
+
+                feedbackHTML += `
+                    <div class="feedback-item ${isCorrect ? 'correct' : 'incorrect'}">
+                        <h4>Q${i + 1}: ${q.question}</h4>
+                        <p>Your answer: ${userAnswers[i]}</p>
+                        <p class="correct-ans">Correct answer: ${q.correctAnswer}</p>
+                        <p class="exp">${q.explanation}</p>
+                    </div>
+                `;
+            });
+
+            document.getElementById('quizScore').textContent = `${score} / ${questionsArray.length}`;
+            document.getElementById('quizFeedback').innerHTML = feedbackHTML;
+        }
+
+        // Restart listener
+        const newRestartBtn = restartBtn.cloneNode(true);
+        restartBtn.parentNode.replaceChild(newRestartBtn, restartBtn);
+        
+        newRestartBtn.addEventListener('click', () => {
+            currentQIndex = 0;
+            userAnswers = [];
             activeView.classList.remove('hidden');
             resultView.classList.add('hidden');
-            const radios = document.querySelectorAll('input[name="q1"]');
-            radios.forEach(r => r.checked = false);
-        };
+            renderQuestion();
+        });
+
+        // Init first question
+        renderQuestion();
     }
 });
